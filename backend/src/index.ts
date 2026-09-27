@@ -44,11 +44,15 @@ app.post('/api/v1/signup', async(c) => {
     
 })
 
+// Login Route
 app.post('/api/v1/login', async(c) => {
  // Initialize Prisma client
   const prisma = createPrisma(c.env.DATABASE_URL);
 
+  // Get the body from the incoming json
   const body = await c.req.json()
+
+  // try to find the user in the db
   const user = await prisma.user.findUnique({
     where: {
       email: body.email,
@@ -56,11 +60,13 @@ app.post('/api/v1/login', async(c) => {
     }
   })
 
+  // if no user is found tell not found
   if(!user){
     c.status(403);
     return c.json({ error: "User not found "});
   }
 
+  // if wrong password is entered throw error
   if(user.password !== body.password){
     c.status(401);
     return c.json({
@@ -68,12 +74,14 @@ app.post('/api/v1/login', async(c) => {
     });
   }
 
+  // create a jwt for them
   const jwt = await sign({
       id: user.id
     }, 
       c.env.JWT_SECRET
     )
-
+  
+  // message which says logged in
   return c.json({ 
     msg: "Logged in Successfully",
     jwt 
